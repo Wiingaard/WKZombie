@@ -195,6 +195,13 @@ public func execute<T: HTMLPage>(_ script: JavaScript) -> (_ page: T) -> Action<
     return WKZombie.sharedInstance.execute(script)
 }
 
+/**
+ Custom from Fork. Runs a JavaScript command and waits for page load
+ */
+public func executeAndRedirect<T: Page>(_ script: JavaScript) -> (_ page: T) -> Action<T> {
+    return WKZombie.sharedInstance.executeAndRedirect(script)
+}
+
 
 //========================================
 // MARK: Fetch Actions

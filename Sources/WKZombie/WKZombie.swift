@@ -442,8 +442,28 @@ public extension WKZombie {
             return self.execute(script)
         }
     }
+    
+    /**
+     Custom from Fork. Runs a JavaScript command and waits for page load
+     */
+    public func executeAndRedirect<T: Page>(_ script: JavaScript) -> Action<T> {
+        return Action() { [unowned self] completion in
+            self._renderer.executeScript(script, willLoadPage: true, postAction: PostAction.none, completionHandler: { result, response, error in
+                let data = self._handleResponse(result as? Data, response: response, error: error)
+                completion(data >>> decodeResult(response?.url))
+            })
+        }
+    }
+    
+    /**
+     Custom from Fork. Runs a JavaScript command and waits for page load
+     */
+    public func executeAndRedirect<T: Page>(_ script: JavaScript) -> (_ page: T) -> Action<T> {
+        return { [unowned self] (page: T) -> Action<T> in
+            return self.executeAndRedirect(script)
+        }
+    }
 }
-
 
 //========================================
 // MARK: Fetch Actions
