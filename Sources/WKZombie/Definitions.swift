@@ -85,10 +85,31 @@ public enum Result<T> {
 }
 
 public extension Result where T:Collection {
-    public func first<A>() -> Result<A> {
+    public func first<A>() -> Result<A> {public extension Result {
+        public func flatMap<A>(_ f: @escaping (T) -> (Result<A>)) -> Result<A> {
+            switch self {
+            case .error(let error): return Result<A>.error(error)
+            case .success(let element): return f(element)
+            }
+        }
+        }
+        
+
         switch self {
         case .success(let result): return resultFromOptional(result.first as? A, error: .notFound)
         case .error(let error): return resultFromOptional(nil, error: error)
+        }
+    }
+}
+
+/**
+ Custom from fork...
+ */
+public extension Result {
+    public func flatMap<A>(_ f: @escaping (T) -> (Result<A>)) -> Result<A> {
+        switch self {
+        case .error(let error): return Result<A>.error(error)
+        case .success(let element): return f(element)
         }
     }
 }
