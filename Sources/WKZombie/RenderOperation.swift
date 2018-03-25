@@ -213,7 +213,24 @@ extension RenderOperation : WKNavigationDelegate {
     
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
         response = navigationResponse.response
+        saveCookies(from: navigationResponse)
         decisionHandler(.allow)
+    }
+    
+    /// Custom function from fork. Saving cookies from navigation response in shared cookies, this allows Alamofire (URLSession) to pass server auth.
+    private func saveCookies(from navigationResponse: WKNavigationResponse) {
+        if let httpResponse = navigationResponse.response as? HTTPURLResponse, let url = httpResponse.url {
+            let allHeaders = httpResponse.allHeaderFields.reduce([String : String](), { (result, next) -> [String : String] in
+                guard let stringKey = next.key as? String, let stringValue = next.value as? String else { return result }
+                var buffer = result
+                buffer[stringKey] = stringValue
+                return buffer
+            })
+            let cookies = HTTPCookie.cookies(withResponseHeaderFields: allHeaders, for: url)
+            for cookie in cookies {
+                HTTPCookieStorage.shared.setCookie(cookie)
+            }
+        }
     }
     
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
