@@ -219,7 +219,15 @@ extension RenderOperation : WKNavigationDelegate {
     
     /// Custom function from fork. Saving cookies from navigation response in shared cookies, this allows Alamofire (URLSession) to pass server auth.
     private func saveCookies(from navigationResponse: WKNavigationResponse) {
-        if let httpResponse = navigationResponse.response as? HTTPURLResponse, let url = httpResponse.url {
+        let saveCookiesGlobally: ([HTTPCookie]) -> () = {
+            $0.forEach(HTTPCookieStorage.shared.setCookie)
+        }
+        
+        if #available(iOS 11.0, *) {
+            self.webView?.configuration.websiteDataStore.httpCookieStore.getAllCookies(saveCookiesGlobally)
+        } else {
+            guard let httpResponse = navigationResponse.response as? HTTPURLResponse, let url = httpResponse.url else { return }
+            
             let allHeaders = httpResponse.allHeaderFields.reduce([String : String](), { (result, next) -> [String : String] in
                 guard let stringKey = next.key as? String, let stringValue = next.value as? String else { return result }
                 var buffer = result
@@ -227,9 +235,7 @@ extension RenderOperation : WKNavigationDelegate {
                 return buffer
             })
             let cookies = HTTPCookie.cookies(withResponseHeaderFields: allHeaders, for: url)
-            for cookie in cookies {
-                HTTPCookieStorage.shared.setCookie(cookie)
-            }
+            saveCookiesGlobally(cookies)
         }
     }
     
